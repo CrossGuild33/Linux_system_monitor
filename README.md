@@ -1,6 +1,6 @@
 # Linux System Monitor using Bash
 
-A simple Linux system monitor written in Bash that continuously monitors CPU, memory, and disk usage. The script displays the current resource usage every two seconds and generates alerts whenever a configurable threshold is exceeded.
+A lightweight Linux system monitoring tool written in Bash. This project continuously monitors CPU, memory, and disk usage, refreshing every two seconds and displaying alerts whenever a predefined threshold is exceeded.
 
 ---
 
@@ -10,9 +10,9 @@ A simple Linux system monitor written in Bash that continuously monitors CPU, me
 - CPU usage monitoring
 - Memory usage monitoring
 - Disk usage monitoring
-- Configurable alert thresholds
+- Configurable thresholds
+- Automatic terminal refresh every 2 seconds
 - Colored alert messages
-- Automatic screen refresh every 2 seconds
 
 ---
 
@@ -31,23 +31,22 @@ A simple Linux system monitor written in Bash that continuously monitors CPU, me
 
 ## Project Structure
 
-```
+```text
 linux-system-monitor-bash/
 │
 ├── README.md
 ├── system_monitor.sh
 └── images/
-    ├── 1-Alerta.png
-    ├── 2. CPU %.png
-    ├── 3. Current CPU%.png
-    ├── 4.Disk.png
-    ├── 5. Memory Usage
-    └── 6.Tempo Real.png
+    ├── alert-function.png
+    ├── cpu-monitor.png
+    ├── memory-monitor.png
+    ├── disk-monitor.png
+    └── running-script.png
 ```
 
 ---
 
-## Configurable Thresholds
+## Threshold Configuration
 
 ```bash
 CPU_THRESHOLD=80
@@ -55,102 +54,150 @@ MEMORY_THRESHOLD=80
 DISK_THRESHOLD=80
 ```
 
-The alert values can be changed according to your monitoring requirements.
+The thresholds can be modified according to your monitoring requirements.
 
 ---
 
 ## Alert Function
 
-The script uses a reusable function to display alerts whenever a monitored resource exceeds the configured threshold.
+Whenever one of the monitored resources exceeds its configured threshold, the script calls the following function:
 
 ```bash
-send_alert "CPU" "$cpu_usage"
+send_alert() {
+    echo "$(tput setaf 1)ALERT: $1 usage exceeded threshold! Current value: $2%$(tput sgr0)"
+}
 ```
 
-Example output:
+The `tput` command changes the terminal color, making alerts easier to identify.
 
-```
-ALERT: CPU usage exceeded threshold! Current value: 85%
-```
-
-![Alert Function](images/1.alerta.png)
+![Alert Function](images/alert-function.png)
 
 ---
 
 ## CPU Monitoring
 
-CPU utilization is obtained from the `top` command and processed using `grep` and `awk`.
+CPU utilization is collected using the `top` command.
 
 ```bash
-top -bn1
+cpu_usage=$(top -bn1 | grep "Cpu(s)" | awk '{print $2 + $4}')
+cpu_usage=${cpu_usage%.*}
+
+if ((cpu_usage >= CPU_THRESHOLD)); then
+    send_alert "CPU" "$cpu_usage"
+fi
 ```
 
-![CPU Monitoring](images/3.Current CPU%.png)
+The script extracts the CPU utilization percentage, converts it to an integer, and compares it with the configured threshold.
+
+![CPU Monitoring](images/cpu-monitor.png)
 
 ---
 
 ## Memory Monitoring
 
-Memory usage is calculated from the `free` command.
+Memory usage is calculated using the `free` command.
 
 ```bash
-free
+memory_usage=$(free | awk '/Mem/ {printf("%3.1f", ($3/$2) * 100)}')
+memory_usage=${memory_usage%.*}
+
+if ((memory_usage >= MEMORY_THRESHOLD)); then
+    send_alert "Memory" "$memory_usage"
+fi
 ```
 
-![Memory Monitoring](images/5.Memory Usage.png)
+The script calculates the percentage of used memory before checking whether it exceeds the configured threshold.
+
+![Memory Monitoring](images/memory-monitor.png)
 
 ---
 
 ## Disk Monitoring
 
-Disk usage is collected from the root filesystem using:
+Disk usage is collected from the root filesystem.
 
 ```bash
-df -h /
+disk_usage=$(df -h / | awk '/\// {print $(NF-1)}')
+disk_usage=${disk_usage%?}
+
+if ((disk_usage >= DISK_THRESHOLD)); then
+    send_alert "Disk" "$disk_usage"
+fi
 ```
 
-![Disk Monitoring](images/4.Disk.png)
+The percentage symbol is removed before the numerical comparison.
+
+![Disk Monitoring](images/disk-monitor.png)
 
 ---
 
 ## Continuous Monitoring
 
-Instead of executing only once, the monitor runs continuously inside a `while` loop.
+The script runs continuously inside an infinite loop.
 
-Every two seconds the screen is cleared and updated with the latest resource usage.
+Each iteration:
+
+- Collects CPU usage
+- Collects memory usage
+- Collects disk usage
+- Displays alerts when necessary
+- Refreshes the terminal
+- Waits two seconds before starting again
 
 ```bash
-while true
-do
-    clear
-    echo "Resource Usage:"
-    echo "CPU: $cpu_usage%"
-    echo "Memory: $memory_usage%"
-    echo "Disk: $disk_usage%"
-    sleep 2
+while true; do
+  # Monitor CPU
+  cpu_usage=$(top -bn1 | grep "Cpu(s)" | awk '{print $2 + $4}')
+  cpu_usage=${cpu_usage%.*}
+  if ((cpu_usage >= CPU_THRESHOLD)); then
+    send_alert "CPU" "$cpu_usage"
+  fi
+
+  # Monitor memory
+  memory_usage=$(free | awk '/Mem/ {printf("%3.1f", ($3/$2) * 100)}')
+  memory_usage=${memory_usage%.*}
+  if ((memory_usage >= MEMORY_THRESHOLD)); then
+    send_alert "Memory" "$memory_usage"
+  fi
+
+  # Monitor disk
+  disk_usage=$(df -h / | awk '/\// {print $(NF-1)}')
+  disk_usage=${disk_usage%?}
+  if ((disk_usage >= DISK_THRESHOLD)); then
+    send_alert "Disk" "$disk_usage"
+  fi
+
+  # Display current stats
+  clear
+  echo "Resource Usage:"
+  echo "CPU: $cpu_usage%"
+  echo "Memory: $memory_usage%"
+  echo "Disk: $disk_usage%"
+
+  sleep 2
 done
 ```
 
-This creates a lightweight real-time system monitor directly in the Linux terminal.
+The monitor updates every **2 seconds**, providing a lightweight real-time monitoring experience directly in the Linux terminal.
 
-![Disk Monitoring](images/6.Tempo Real.png)
+![Running Script](images/running-script.png)
+
 ---
 
 ## Example Output
 
-```
+```text
 Resource Usage:
 
-CPU: 3%
-Memory: 17%
-Disk: 2%
+CPU: 5%
+Memory: 28%
+Disk: 11%
 ```
 
-When a threshold is exceeded:
+If a threshold is exceeded:
 
-```
-ALERT: CPU usage exceeded threshold!
-Current value: 85%
+```text
+ALERT: CPU usage exceeded threshold! Current value: 86%
 ```
 
 ---
@@ -159,43 +206,45 @@ Current value: 85%
 
 | Command | Purpose |
 |----------|---------|
-| `top` | Monitor CPU usage |
-| `free` | Display memory usage |
-| `df` | Display disk usage |
-| `awk` | Parse command output |
-| `grep` | Filter command output |
-| `tput` | Display colored alerts |
-| `clear` | Refresh terminal screen |
-| `sleep` | Control update interval |
+| `top` | Retrieves CPU utilization |
+| `free` | Displays memory usage |
+| `df` | Displays disk usage |
+| `awk` | Processes command output |
+| `grep` | Filters command output |
+| `tput` | Displays colored terminal messages |
+| `clear` | Clears the terminal screen |
+| `sleep` | Controls the refresh interval |
 
 ---
 
 ## Skills Practiced
 
 - Bash scripting
+- Linux command line
 - Functions
 - Variables
-- Loops (`while`)
+- Infinite loops
 - Conditional statements
-- Linux system monitoring
-- Text processing with `awk` and `grep`
 - Command substitution
-- Terminal output formatting
+- Text processing using `awk` and `grep`
+- Linux system monitoring
+- Terminal formatting
 
 ---
 
 ## Future Improvements
 
-- Log alerts to a file
-- Send email notifications
-- Monitor network usage
-- Monitor running processes
+- Save alerts to a log file
 - Add timestamps to alerts
-- Export metrics to CSV
-- Display system uptime
+- Monitor network usage
+- Monitor the top CPU-consuming processes
+- Send email notifications
+- Export monitoring metrics to CSV
 
 ---
 
 ## Author
 
-Julio Cesar Teixeira de Lima
+**Julio Cesar Teixeira de Lima**
+
+This project was developed as part of my Linux and Bash scripting studies to strengthen my skills in Linux system administration, automation, and scripting.

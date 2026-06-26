@@ -37,11 +37,12 @@ linux-system-monitor-bash/
 ├── README.md
 ├── system_monitor.sh
 └── images/
-    ├── 01-alert-function.png
-    ├── 02-cpu-monitor.png
-    ├── 03-memory-monitor.png
-    ├── 04-disk-monitor.png
-    └── 05-running-script.png
+    ├── 1-Alerta.png
+    ├── 2. CPU %.png
+    ├── 3. Current CPU%.png
+    ├── 4.Disk.png
+    ├── 5. Memory Usage
+    └── 6.Tempo Real.png
 ```
 
 ---
@@ -72,7 +73,7 @@ Example output:
 ALERT: CPU usage exceeded threshold! Current value: 85%
 ```
 
-![Alert Function](images/01-alert-function.png)
+![Alert Function](images/01.alerta.png)
 
 ---
 
@@ -84,7 +85,7 @@ CPU utilization is obtained from the `top` command and processed using `grep` an
 top -bn1
 ```
 
-![CPU Monitoring](images/02-cpu-monitor.png)
+![CPU Monitoring](images/3.Current CPU%.png)
 
 ---
 
@@ -96,7 +97,7 @@ Memory usage is calculated from the `free` command.
 free
 ```
 
-![Memory Monitoring](images/03-memory-monitor.png)
+![Memory Monitoring](images/5.Memory Usage.png)
 
 ---
 
@@ -108,7 +109,7 @@ Disk usage is collected from the root filesystem using:
 df -h /
 ```
 
-![Disk Monitoring](images/04-disk-monitor.png)
+![Disk Monitoring](images/4.Disk.png)
 
 ---
 
@@ -132,6 +133,7 @@ done
 
 This creates a lightweight real-time system monitor directly in the Linux terminal.
 
+![Disk Monitoring](images/6.Tempo Real.png)
 ---
 
 ## Example Output
@@ -150,8 +152,6 @@ When a threshold is exceeded:
 ALERT: CPU usage exceeded threshold!
 Current value: 85%
 ```
-
-![Running Script](images/05-running-script.png)
 
 ---
 

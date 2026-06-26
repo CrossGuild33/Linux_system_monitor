@@ -73,7 +73,7 @@ Example output:
 ALERT: CPU usage exceeded threshold! Current value: 85%
 ```
 
-![Alert Function](images/01.alerta.png)
+![Alert Function](images/1.alerta.png)
 
 ---
 
